@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Acessar Aluno{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="logo-title">Acessar Aluno</div>
+
+    <div class="card p-4 mb-4">
+      <a href="{{ url_for('calendar_view') }}" class="btn btn-light mb-3">Ver Calendário de Aulas</a>
+
+      {% if aluno %}
+        <p><b>Nome:</b> {{ aluno.nome }}</p>
+        <p><b>Faixa:</b> {{ aluno.faixa }}</p>
+
+        <a href="{{ url_for('meus_agendamentos', aluno_id=aluno.id) }}" class="btn btn-warning">Ver meus agendamentos</a>
+
+        <!-- Botão Agendar Horário com ID para desabilitar -->
+        <a id="btnAgendar"
+           href="{{ url_for('cadastrar_horario', aluno_id=aluno.id) }}"
+           class="btn btn-success">
+           Agendar horário
+        </a>
+      {% else %}
+        <form method="POST">
+          <div class="mb-3">
+            <label for="matricula" class="form-label">Matrícula</label>
+            <input type="text" name="matricula" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="senha" class="form-label">Senha (4 primeiros dígitos do CPF)</label>
+            <input type="password" name="senha" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Acessar</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Script para desabilitar botão após 14h -->
+<script>
+(function(){
+  const cutoff = {{ CUTOFF_HOUR if CUTOFF_HOUR is defined else 14 }};
+  const nowHour = {{ NOW_HOUR if NOW_HOUR is defined else 0 }};
+
+  if (nowHour >= cutoff) {
+    const btn = document.getElementById('btnAgendar');
+    if (btn) {
+      btn.classList.remove('btn-success');
+      btn.classList.add('btn-secondary', 'disabled');
+      btn.setAttribute('aria-disabled', 'true');
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('Agendamento para hoje permitido até ' + cutoff + ':00.');
+      });
+    }
+  }
+})();
+</script>
+
+{% endblock %}

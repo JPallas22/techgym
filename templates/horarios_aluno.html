@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Horários do Aluno{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="logo-title">Agendar Aula</div>
+
+    <div class="card p-4">
+      <h4 class="mb-3">Olá, {{ aluno.nome }} ({{ aluno.faixa }})</h4>
+      <p>Selecione um horário para agendar sua aula:</p>
+
+      <div class="list-group">
+        {% for h in horarios %}
+          <form method="POST" action="{{ url_for('agendar_aula', aluno_id=aluno.id) }}" class="mb-2">
+            <input type="hidden" name="horario_id" value="{{ h.id }}">
+            <button type="submit"
+                    class="btn btn-primary w-100"
+                    data-dia-semana="{{ h.dia_semana }}">
+              {{ h.dia_semana }} - {{ h.hora }}
+            </button>
+          </form>
+        {% else %}
+          <div class="alert alert-info">Nenhum horário disponível no momento.</div>
+        {% endfor %}
+      </div>
+
+      <div class="mt-4">
+        <a href="{{ url_for('meus_agendamentos', aluno_id=aluno.id) }}" class="btn btn-warning">Meus Agendamentos</a>
+        <a href="{{ url_for('acessar_aluno') }}" class="btn btn-secondary">Voltar</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Script: desabilitar botões de hoje após 14h -->
+<script>
+(function(){
+  const cutoff = {{ CUTOFF_HOUR if CUTOFF_HOUR is defined else 14 }};
+  const now = new Date();
+  const nowHour = now.getHours();
+
+  // Mapear getDay() -> nomes iguais aos do banco
+  const weekdayNames = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const todayName = weekdayNames[now.getDay()];
+
+  document.querySelectorAll('[data-dia-semana]').forEach(function(btn){
+    const dia = btn.getAttribute('data-dia-semana');
+    if (dia === todayName && nowHour >= cutoff) {
+      btn.classList.remove('btn-primary','btn-success');
+      btn.classList.add('btn-secondary');
+      btn.disabled = true;
+      btn.title = 'Agendamento para hoje permitido até ' + cutoff + ':00';
+    }
+  });
+})();
+</script>
+
+{% endblock %}

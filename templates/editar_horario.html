@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Editar Horário{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="logo-title">Editar Horário</div>
+        <div class="card p-4">
+            <form action="{{ url_for('editar_horario', horario_id=horario.id) }}" method="post">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Dia da Semana*</label>
+                        <select class="form-select" name="dia_semana" required>
+                            {% for dia in ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'] %}
+                            <option value="{{ dia }}" {% if horario.dia_semana == dia %}selected{% endif %}>{{ dia }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Hora*</label>
+                        <input type="time" class="form-control" name="hora" value="{{ horario.hora }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Faixa*</label>
+                        <select class="form-select" name="faixa" required>
+                            {% for faixa in ['Branca', 'Amarela', 'Azul', 'Verde', 'Roxa', 'Marrom', 'Preta'] %}
+                            <option value="{{ faixa }}" {% if horario.faixa == faixa %}selected{% endif %}>{{ faixa }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4 d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    <a href="{{ url_for('listar_horarios') }}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}Calendário de Aulas{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10">
+    <div class="logo-title">Calendário de Aulas</div>
+
+    <div class="card p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <button id="prevBtn" class="btn btn-secondary">&laquo; Mês anterior</button>
+        <h4 id="monthTitle" class="m-0"></h4>
+        <button id="nextBtn" class="btn btn-secondary">Próximo mês &raquo;</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center">
+          <thead>
+            <tr>
+              <th>Seg</th>
+              <th>Ter</th>
+              <th>Qua</th>
+              <th>Qui</th>
+              <th>Sex</th>
+              <th>Sáb</th>
+              <th>Dom</th>
+            </tr>
+          </thead>
+          <tbody id="calendarBody"></tbody>
+        </table>
+      </div>
+
+      <div class="mt-3">
+        <span class="badge bg-success">Disponível</span>
+        <span class="badge bg-danger">Indisponível (Domingo ou Feriado)</span>
+        <span class="badge bg-secondary">Fora do mês</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const holidays = new Set({{ holidays|tojson }});
+  let currentYear = {{ year }};
+  let currentMonth = {{ month }};
+
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const monthTitle = document.getElementById('monthTitle');
+  const calendarBody = document.getElementById('calendarBody');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  function getAvailableDays(year, month) {
+    const params = new URLSearchParams({year, month});
+    return fetch(`/api/available-days?${params.toString()}`).then(r => r.json());
+  }
+
+  function renderCalendar(year, month) {
+    monthTitle.textContent = monthNames[month-1] + ' de ' + year;
+    calendarBody.innerHTML = '';
+
+    getAvailableDays(year, month).then(data => {
+      const avail = new Set(data.available_days);
+      const firstDay = new Date(Date.UTC(year, month-1, 1));
+      const firstWeekday = (firstDay.getUTCDay() + 6) % 7;
+      const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      let day = 1 - firstWeekday;
+
+      for (let r = 0; r < 6; r++) {
+        const tr = document.createElement('tr');
+        for (let c = 0; c < 7; c++) {
+          const td = document.createElement('td');
+          const d = new Date(Date.UTC(year, month-1, day));
+          const inMonth = d.getUTCMonth() === (month-1);
+          if (inMonth) {
+            const iso = d.toISOString().slice(0,10);
+            const isAvailable = avail.has(iso);
+
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-sm w-100 ' + (isAvailable ? 'btn-success' : 'btn-danger');
+            btn.textContent = d.getUTCDate();
+            btn.disabled = !isAvailable;
+            if (isAvailable) {
+              btn.title = 'Dia disponível para agendamento';
+              btn.addEventListener('click', () => {
+                alert('Dia ' + iso + ' disponível. Selecione um horário na página de horários.');
+              });
+            } else {
+              btn.title = 'Indisponível';
+            }
+            td.appendChild(btn);
+          } else {
+            td.className = 'text-muted';
+            td.textContent = d.getUTCDate();
+          }
+          tr.appendChild(td);
+          day++;
+        }
+        calendarBody.appendChild(tr);
+      }
+    });
+  }
+
+  prevBtn.addEventListener('click', () => {
+    currentMonth--;
+    if (currentMonth === 0) { currentMonth = 12; currentYear--; }
+    renderCalendar(currentYear, currentMonth);
+  });
+  nextBtn.addEventListener('click', () => {
+    currentMonth++;
+    if (currentMonth === 13) { currentMonth = 1; currentYear++; }
+    renderCalendar(currentYear, currentMonth);
+  });
+
+  renderCalendar(currentYear, currentMonth);
+})();
+</script>
+{% endblock %}

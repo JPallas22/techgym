@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}Cadastrar Horário{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="logo-title">Cadastro de Horário</div>
+
+        <!-- Mensagens Flash (vindas do backend) -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Alerta fixo com as regras -->
+        <div class="alert alert-info">
+            <strong>Regras de Agendamento:</strong><br>
+            • Para aulas no mesmo dia (segunda a sexta), o agendamento deve ser feito até as <strong>14h</strong>.<br>
+            • Para aulas de <strong>sábado</strong>, só é permitido agendar na <strong>sexta-feira</strong>, entre <strong>16h e 20h</strong>.
+        </div>
+
+        <!-- Alerta dinâmico (via JS) -->
+        <div id="alerta-regras" class="alert alert-danger d-none" role="alert"></div>
+
+        <div class="card p-4">
+            <form method="post" action="{{ url_for('cadastrar_horario') }}">
+                <input type="hidden" name="aluno_id" value="{{ aluno.id }}">
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Dia da Semana*</label>
+                        <select class="form-select" name="dia_semana" id="dia_semana" required>
+                            <option value="">Selecione</option>
+                            <option>Segunda</option>
+                            <option>Terça</option>
+                            <option>Quarta</option>
+                            <option>Quinta</option>
+                            <option>Sexta</option>
+                            <option>Sábado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Hora*</label>
+                        <select class="form-select" name="hora" id="hora" required>
+                            <option value="">Selecione o dia primeiro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary">Cadastrar</button>
+                    <a href="{{ url_for('meus_agendamentos', aluno_id=aluno.id) }}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const horariosPorDia = {
+        'Segunda': ['08:30', '09:30', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'],
+        'Terça':   ['09:30', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'],
+        'Quarta':  ['09:30', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'],
+        'Quinta':  ['08:30', '09:30', '16:00', '17:00', '18:00', '19:00', '20:00'],
+        'Sexta':   ['09:30', '17:00', '18:00', '19:00'],
+        'Sábado':  ['09:00', '10:00', '11:00', '12:00']
+    };
+
+    const diaSelect = document.querySelector('#dia_semana');
+    const horaSelect = document.querySelector('#hora');
+    const alerta = document.querySelector('#alerta-regras');
+
+    const agora = new Date();
+    const hoje = agora.toLocaleDateString('pt-BR', { weekday: 'long' });
+    const horaAtual = agora.getHours();
+
+    const mapaDias = {
+        'segunda-feira': 'Segunda',
+        'terça-feira': 'Terça',
+        'quarta-feira': 'Quarta',
+        'quinta-feira': 'Quinta',
+        'sexta-feira': 'Sexta',
+        'sábado': 'Sábado',
+        'domingo': 'Domingo'
+    };
+
+    diaSelect.addEventListener('change', function () {
+        const dia = this.value;
+        let horarios = horariosPorDia[dia] || [];
+        alerta.classList.add('d-none');
+
+        // Regra 1: mesmo dia (segunda a sexta), só até 14h
+        if (mapaDias[hoje.toLowerCase()] === dia && dia !== 'Sábado' && horaAtual >= 14) {
+            horarios = [];
+            alerta.textContent = "Regra de agendamento: para aulas no mesmo dia (segunda a sexta), o agendamento deve ser feito até as 14h.";
+            alerta.classList.remove('d-none');
+        }
+
+        // Regra 2: sábado só pode agendar na sexta entre 16h e 20h
+        if (dia === 'Sábado') {
+            if (!(mapaDias[hoje.toLowerCase()] === 'Sexta' && horaAtual >= 16 && horaAtual < 20)) {
+                horarios = [];
+                alerta.textContent = "Regra de agendamento: aulas de sábado só podem ser agendadas na sexta-feira, entre 16h e 20h.";
+                alerta.classList.remove('d-none');
+            }
+        }
+
+        // Atualiza select de horários
+        horaSelect.innerHTML = '';
+        if (horarios.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'Nenhum horário disponível';
+            horaSelect.appendChild(opt);
+        } else {
+            const optDefault = document.createElement('option');
+            optDefault.value = '';
+            optDefault.textContent = 'Selecione';
+            horaSelect.appendChild(optDefault);
+
+            horarios.forEach(hora => {
+                const opt = document.createElement('option');
+                opt.value = hora;
+                opt.textContent = hora;
+                horaSelect.appendChild(opt);
+            });
+        }
+    });
+</script>
+{% endblock %}
